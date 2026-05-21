@@ -1,0 +1,46 @@
+# Example: scheduled sync from PostgreSQL to PostgreSQL every 6 hours.
+#
+# Prerequisites:
+#   kubectl create secret generic source-db-secret -n hermes-system \
+#     --from-literal=username=pguser_source \
+#     --from-literal=password=sourcesecret
+#
+#   kubectl create secret generic dest-db-secret -n hermes-system \
+#     --from-literal=username=pguser_dest \
+#     --from-literal=password=destsecret
+apiVersion: hermes.io/v1alpha1
+kind: DatabaseMigration
+metadata:
+  name: postgresql-sync-6h
+  namespace: hermes-system
+spec:
+  mode: schedule
+  schedule: "0 */6 * * *"  # Every 6 hours
+  source:
+    type: postgresql
+    host: pg-primary.example.svc.cluster.local
+    port: 5432
+    database: production_db
+    secretRef:
+      name: source-db-secret
+      usernameKey: username
+      passwordKey: password
+    sslMode: require
+  destination:
+    type: postgresql
+    host: pg-replica.example.svc.cluster.local
+    port: 5432
+    database: analytics_db
+    secretRef:
+      name: dest-db-secret
+      usernameKey: username
+      passwordKey: password
+    sslMode: require
+  options:
+    schema: false   # Schema already exists in destination; only sync data
+    data: true
+    batchSize: 2000
+    tables:
+      - orders
+      - order_items
+      - customers

@@ -1,0 +1,37 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hermes.fullname" . }}
+  labels:
+    {{- include "hermes.labels" . | nindent 4 }}
+rules:
+  # Operator: watch and reconcile DatabaseMigration CRDs cluster-wide
+  - apiGroups: [hermes.io]
+    resources: [databasemigrations]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [hermes.io]
+    resources: [databasemigrations/status]
+    verbs: [patch, update]
+  - apiGroups: [hermes.io]
+    resources: [databasemigrations/finalizers]
+    verbs: [update]
+
+  # Operator: manage Jobs and CronJobs cluster-wide
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch, create, update, patch, delete]
+
+  # Operator: read Secrets to pass credentials to migrator pods
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, watch]
+
+  # Operator: leader election and event writing
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [create, patch]
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, list, watch, create, update, patch, delete]
+{{- end }}

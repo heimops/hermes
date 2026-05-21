@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+
+jobs:
+  # ── Build and push container images ──────────────────────────────────────
+  docker:
+    name: Build & Push Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version tag
+        id: tag
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push hermes-operator
+        uses: docker/build-push-action@v5
+        with:
+          context: operator
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hermes-operator:${{ steps.tag.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/hermes-operator:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push hermes-migrator
+        uses: docker/build-push-action@v5
+        with:
+          context: migrator
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hermes-migrator:${{ steps.tag.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/hermes-migrator:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Release Helm chart to GitHub Pages ───────────────────────────────────
+  helm:
+    name: Release Helm Chart
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name  "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          charts_dir: charts
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Copy artifacthub-repo.yml to gh-pages so ArtifactHub can find it
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy ArtifactHub metadata
+        run: cp artifacthub-repo.yml gh-pages/artifacthub-repo.yml
+
+      - name: Commit ArtifactHub metadata
+        working-directory: gh-pages
+        run: |
+          git config user.name  "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add artifacthub-repo.yml
+          git diff --staged --quiet || git commit -m "chore: update ArtifactHub metadata"
+          git push

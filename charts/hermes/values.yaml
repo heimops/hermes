@@ -1,0 +1,20 @@
+# Operator deployment
+operator:
+  image:
+    repository: ghcr.io/hermesops/hermes-operator
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+
+# Image used by Jobs/CronJobs created for each DatabaseMigration (can be overridden per CR)
+migrator:
+  image:
+    repository: ghcr.io/hermesops/hermes-migrator
+    tag: latest
+
+serviceAccount:
+  create: true
+  name: hermes
+
+rbac:
+  create: true

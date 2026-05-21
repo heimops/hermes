@@ -1,0 +1,9 @@
+# ArtifactHub repository metadata.
+# This file must be in the root of the Helm repository (gh-pages branch).
+# See: https://artifacthub.io/docs/topics/repositories/helm-charts/
+
+repositoryID: ""   # Fill in after registering on ArtifactHub
+owners:
+  - name: hermesops
+    email: vriverofernandez@gmail.com
+ignore: []

@@ -1,0 +1,40 @@
+# Example: one-time migration from MySQL to PostgreSQL.
+#
+# Prerequisites:
+#   kubectl create secret generic source-db-secret -n hermes-system \
+#     --from-literal=username=myuser \
+#     --from-literal=password=mysecretpassword
+#
+#   kubectl create secret generic dest-db-secret -n hermes-system \
+#     --from-literal=username=pguser \
+#     --from-literal=password=pgsecretpassword
+apiVersion: hermes.io/v1alpha1
+kind: DatabaseMigration
+metadata:
+  name: mysql-to-postgresql
+  namespace: hermes-system
+spec:
+  mode: once
+  source:
+    type: mysql
+    host: mysql.example.svc.cluster.local
+    port: 3306
+    database: myapp_db
+    secretRef:
+      name: source-db-secret
+      usernameKey: username
+      passwordKey: password
+  destination:
+    type: postgresql
+    host: postgresql.example.svc.cluster.local
+    port: 5432
+    database: myapp_db
+    secretRef:
+      name: dest-db-secret
+      usernameKey: username
+      passwordKey: password
+  options:
+    schema: true
+    data: true
+    batchSize: 500
+    # tables: []  # Omit or leave empty to migrate ALL tables
