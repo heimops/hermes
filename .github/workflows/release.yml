@@ -8,10 +8,9 @@ on:
 permissions:
   contents: write
   packages: write
-  pages: write
 
 jobs:
-  # ── Build and push container images ──────────────────────────────────────
+  # ── 1. Build and push container images ───────────────────────────────────
   docker:
     name: Build & Push Docker images
     runs-on: ubuntu-latest
@@ -55,13 +54,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── Release Helm chart to GitHub Pages ───────────────────────────────────
+  # ── 2. Publish Helm chart to GitHub Pages ────────────────────────────────
   helm:
     name: Release Helm Chart
     runs-on: ubuntu-latest
     needs: docker
     steps:
-      - name: Checkout
+      - name: Checkout (full history needed by chart-releaser)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -70,6 +69,22 @@ jobs:
         run: |
           git config user.name  "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Initialize gh-pages branch if it does not exist
+        run: |
+          if ! git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            echo "gh-pages branch not found — creating it"
+            git worktree add /tmp/gh-pages-init --orphan gh-pages
+            cd /tmp/gh-pages-init
+            echo "# Hermes Helm Chart Repository" > README.md
+            git add README.md
+            git commit -m "chore: initialize gh-pages branch"
+            git push origin gh-pages
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove /tmp/gh-pages-init
+          else
+            echo "gh-pages branch already exists — skipping init"
+          fi
 
       - name: Install Helm
         uses: azure/setup-helm@v4
@@ -83,21 +98,40 @@ jobs:
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Copy artifacthub-repo.yml to gh-pages so ArtifactHub can find it
+  # ── 3. Add ArtifactHub metadata to gh-pages ──────────────────────────────
+  # Runs in a separate job so gh-pages is guaranteed to exist when we
+  # try to check it out (chart-releaser in the helm job created it).
+  artifacthub:
+    name: Update ArtifactHub metadata
+    runs-on: ubuntu-latest
+    needs: helm
+    steps:
+      - name: Checkout main (to get artifacthub-repo.yml)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            artifacthub-repo.yml
+          sparse-checkout-cone-mode: false
+
       - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: gh-pages
 
-      - name: Copy ArtifactHub metadata
-        run: cp artifacthub-repo.yml gh-pages/artifacthub-repo.yml
-
-      - name: Commit ArtifactHub metadata
+      - name: Configure Git
         working-directory: gh-pages
         run: |
           git config user.name  "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Copy ArtifactHub metadata and push
+        run: |
+          cp artifacthub-repo.yml gh-pages/artifacthub-repo.yml
+          cd gh-pages
           git add artifacthub-repo.yml
-          git diff --staged --quiet || git commit -m "chore: update ArtifactHub metadata"
-          git push
+          git diff --staged --quiet \
+            && echo "No changes to artifacthub-repo.yml" \
+            || git commit -m "chore: update ArtifactHub metadata [skip ci]"
+          git push origin gh-pages
