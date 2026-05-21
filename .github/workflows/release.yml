@@ -74,14 +74,14 @@ jobs:
         run: |
           if ! git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
             echo "gh-pages branch not found — creating it"
-            git worktree add /tmp/gh-pages-init --orphan gh-pages
-            cd /tmp/gh-pages-init
+            CURRENT_SHA=$(git rev-parse HEAD)
+            git switch --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
             echo "# Hermes Helm Chart Repository" > README.md
             git add README.md
             git commit -m "chore: initialize gh-pages branch"
             git push origin gh-pages
-            cd "$GITHUB_WORKSPACE"
-            git worktree remove /tmp/gh-pages-init
+            git checkout "$CURRENT_SHA"
           else
             echo "gh-pages branch already exists — skipping init"
           fi
