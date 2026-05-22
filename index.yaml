@@ -1,0 +1,83 @@
+apiVersion: v1
+entries:
+  hermes:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial release of the Hermes database migration operator
+        - kind: added
+          description: DatabaseMigration CRD supporting MySQL and PostgreSQL
+        - kind: added
+          description: One-time Job and scheduled CronJob migration modes
+        - kind: added
+          description: Cross-database DDL and type translation (MySQL <-> PostgreSQL)
+      artifacthub.io/crds: |
+        - kind: DatabaseMigration
+          version: v1alpha1
+          name: databasemigrations.hermes.io
+          displayName: Database Migration
+          description: >
+            Defines a migration from a source to a destination database.
+            Supports MySQL and PostgreSQL in any combination.
+      artifacthub.io/crdsExamples: |
+        - apiVersion: hermes.io/v1alpha1
+          kind: DatabaseMigration
+          metadata:
+            name: example-mysql-to-pg
+            namespace: hermes-system
+          spec:
+            mode: once
+            source:
+              type: mysql
+              host: mysql.example.svc.cluster.local
+              database: myapp
+              secretRef:
+                name: source-db-secret
+            destination:
+              type: postgresql
+              host: postgres.example.svc.cluster.local
+              database: myapp
+              secretRef:
+                name: dest-db-secret
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Documentation
+          url: https://github.com/hermesops/hermes/blob/main/README.md
+        - name: Source Code
+          url: https://github.com/hermesops/hermes
+        - name: Bug Tracker
+          url: https://github.com/hermesops/hermes/issues
+      artifacthub.io/operator: "true"
+      artifacthub.io/operatorCapabilities: Basic Install
+      artifacthub.io/prerelease: "false"
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/external-secrets/external-secrets
+    apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-05-22T16:11:21.888154+02:00"
+    description: 'Kubernetes operator for automated database migrations between MySQL
+      and PostgreSQL. Supports one-time migrations and continuous scheduled synchronization. '
+    digest: 187104492073783391c322a3645d665c4d99c1e779d83b9e895149dba91d52ad
+    home: https://github.com/hermesops/hermes
+    icon: https://raw.githubusercontent.com/hermesops/hermes/main/docs/logo.png
+    keywords:
+    - migration
+    - database
+    - mysql
+    - postgresql
+    - mariadb
+    - kubernetes
+    - operator
+    - sync
+    maintainers:
+    - email: vriverofernandez@gmail.com
+      name: hermesops
+      url: https://github.com/hermesops
+    name: hermes
+    sources:
+    - https://github.com/hermesops/hermes
+    type: application
+    urls:
+    - https://heimops.github.io/hermes/hermes-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-05-22T16:11:21.887212+02:00"
