@@ -54,10 +54,10 @@ entries:
         - url: https://artifacthub.io/packages/helm/external-secrets/external-secrets
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-05-22T16:11:21.888154+02:00"
+    created: "2026-05-22T17:01:12.687596+02:00"
     description: 'Kubernetes operator for automated database migrations between MySQL
       and PostgreSQL. Supports one-time migrations and continuous scheduled synchronization. '
-    digest: 187104492073783391c322a3645d665c4d99c1e779d83b9e895149dba91d52ad
+    digest: 09f7adc3acd06b862070ce2e045aad2580b9055905c4c91c27875df63fbe5543
     home: https://github.com/hermesops/hermes
     icon: https://raw.githubusercontent.com/hermesops/hermes/main/docs/logo.png
     keywords:
@@ -80,4 +80,4 @@ entries:
     urls:
     - https://heimops.github.io/hermes/hermes-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-22T16:11:21.887212+02:00"
+generated: "2026-05-22T17:01:12.687064+02:00"
